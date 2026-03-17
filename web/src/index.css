@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-navy: #0F172A;
+  --color-navy-mid: #1E293B;
+  --color-yellow: #FBBF24;
+  --color-ai-purple: #7C3AED;
+  --color-ai-pink: #EC4899;
+  --color-success: #16A34A;
+  --color-surface: #F8FAFC;
+  --color-text-primary: #0F172A;
+  --color-text-muted: #64748B;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+/* Safe area support for iOS notch/home bar */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth bottom sheet animation */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 2px;
+}
+
+/* Prevent body scroll when bottom sheet open */
+body.sheet-open {
+  overflow: hidden;
+}
+
+/* Waveform bar animation for voice recording */
+@keyframes waveform {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+
+.animate-waveform {
+  animation: waveform 0.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+/* Confetti fall animation */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) translateX(var(--drift, 0px)) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Bottom sheet smooth 300ms animation override */
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Ensure inputs scroll into view when keyboard opens */
+input:focus, textarea:focus {
+  scroll-margin-bottom: 120px;
+}
+
+/* Prevent text size adjustment on mobile */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Safe area utility for bottom AI bar */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ensure no overflow on mobile */
+.overflow-x-clip {
+  overflow-x: clip;
+}
+
+/* Synced checkmark animation */
+@keyframes synced-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-synced {
+  animation: synced-pop 0.3s ease-out;
+}

@@ -1,0 +1,302 @@
+# .cursorrules — FieldCheck AI Checklist App
+# Stack: Ruby on Rails (API) + React (Frontend)
+# Domain: Contractor field tools, inspired by CompanyCam
+
+---
+
+## PROJECT CONTEXT
+
+You are building **FieldCheck**, an AI-powered checklist app for contractors
+(roofers, HVAC techs, plumbers, electricians, etc.).
+
+Users are field workers — hands dirty, gloves on, standing on roofs. They
+complete checklists using voice and photos, not typing. The AI does the matching.
+
+Always keep this user in mind: **a roofer with dirty gloves, one thumb free,
+on a ladder, with spotty LTE.** Every design decision flows from that image.
+
+---
+
+## TECH STACK
+
+### Backend (Ruby on Rails)
+- Rails 7.x API-only mode (`--api`)
+- PostgreSQL database
+- Devise for authentication (simple email/password)
+- ActiveStorage for photo uploads (S3 in production, disk in dev)
+- Sidekiq for background jobs
+- RSpec + FactoryBot for testing
+
+### Frontend (React)
+- React 18 with hooks
+- React Router v6 for routing
+- Tailwind CSS for styling
+- Zustand for global state management
+- React Query (TanStack) for server state / caching
+- Axios for HTTP
+- Vite for bundling
+
+### AI / External APIs
+- **Claude API** (`claude-sonnet-4-20250514`) — voice intent matching, photo analysis, Q&A
+- **OpenAI Whisper API** — speech-to-text transcription
+- All AI calls go through the Rails backend — never call AI APIs directly from frontend
+
+---
+
+## RAILS CONVENTIONS
+
+### API Structure
+- All endpoints under `/api/v1/`
+- Return JSON always. Use `render json:` not views
+- Use serializers (ActiveModel::Serializers or fast_jsonapi pattern)
+- Standard response envelope:
+  ```json
+  { "data": {...}, "meta": {}, "errors": [] }
+  ```
+- HTTP status codes must be explicit: `render json: ..., status: :created`
+
+### Models
+- Use UUIDs as primary keys (`id: :uuid`)
+- Always add database indexes for foreign keys and frequently queried columns
+- Enums defined in the model with string backing in DB:
+  ```ruby
+  enum trade_type: { roofing: 'roofing', hvac: 'hvac', ... }, _prefix: true
+  ```
+- Validations on model, not just controller
+- No business logic in controllers — use service objects in `app/services/`
+
+### Controllers
+- Thin controllers. Extract logic to service objects
+- Use `before_action` for auth and record finding
+- Never return raw ActiveRecord errors — format them:
+  ```ruby
+  render json: { errors: resource.errors.full_messages }, status: :unprocessable_entity
+  ```
+
+### Service Objects
+- One file per service in `app/services/`
+- Named as verb + noun: `VoiceMatchService`, `PhotoAnalysisService`, `AiQaService`
+- Single public method: `#call`
+- Return a result object with `success?`, `data`, `error`
+- Example pattern:
+  ```ruby
+  class VoiceMatchService
+    def initialize(transcription:, items:)
+      @transcription = transcription
+      @items = items
+    end
+
+    def call
+      # Claude API call here
+      # Return structured result
+    end
+
+    private
+    # helper methods
+  end
+  ```
+
+### AI Service Rules
+- All Claude API calls in `app/services/ai/`
+- Always rescue from API errors and return graceful error result
+- Log all AI calls with: input tokens, output tokens, latency, model used
+- Never put prompts inline in controllers — define them as private methods or constants in service
+- Confidence scores must be 0.0–1.0 floats, validated before use
+
+### Testing
+- Test all service objects with RSpec unit tests
+- Test all API endpoints with request specs
+- Use VCR cassettes for external API calls in tests
+- Test AI confidence thresholds explicitly (mock different confidence values)
+- Minimum 80% test coverage
+
+---
+
+## REACT CONVENTIONS
+
+### Component Structure
+```
+src/
+├── components/        # Reusable UI components
+│   ├── ui/            # Primitives: Button, Card, Badge, etc.
+│   ├── checklist/     # Checklist-specific components
+│   ├── ai/            # AI action bar, voice UI, photo UI
+│   └── project/       # Project card, project header, etc.
+├── pages/             # Route-level page components
+├── hooks/             # Custom React hooks
+├── services/          # API call functions
+├── stores/            # Zustand stores
+├── utils/             # Pure utility functions
+└── constants/         # App-wide constants
+```
+
+### Component Rules
+- Functional components only — no class components
+- One component per file
+- File named same as component: `VoiceCheckoff.jsx`
+- Props destructured at top of function
+- No inline styles — Tailwind classes only
+- If a component exceeds ~150 lines, split it
+
+### Tailwind Rules
+- Use design tokens via CSS variables defined in `index.css`
+- Always use these semantic colors (not raw Tailwind colors):
+  - Primary: `bg-blue-600` (`#2563EB`)
+  - Navy: `bg-slate-900` (`#0F172A`)
+  - Success: `bg-green-600`
+  - AI accent: `bg-violet-600` / `border-violet-500`
+  - Warning: `bg-yellow-400`
+- Touch targets: minimum `h-12 w-12` (48px) for all interactive elements
+- Text minimum: `text-base` (16px) on mobile
+- Never use `text-xs` for anything the user needs to read
+
+### Mobile-First Rules
+- All layouts start mobile, then add `md:` and `lg:` breakpoints
+- Primary actions in bottom 1/3 of screen (thumb reach zone)
+- Use bottom sheets (slide up from bottom) not modals for overlays
+- Checklist items: full-width tap targets, min height `h-14`
+- Avoid horizontal scrolling
+
+### AI UI Rules
+- AI features always marked with ✦ sparkle icon and violet accent color
+- Loading states: use skeleton screens + "Analyzing..." text, not just spinners
+- Confidence feedback: show visually (color or icon) but not as a raw number to users
+- Always show what the AI matched BEFORE committing the action
+- Every AI action must have a clear "Cancel" or "That's wrong" escape
+
+### State Management
+- Server state (API data): React Query only — no manual fetch in useEffect
+- UI state (modals, tabs, toggles): local useState
+- Cross-component UI state: Zustand store
+- Never store API data in Zustand — that's React Query's job
+
+### Error Handling
+- Every API call must handle: loading, error, empty, success states
+- Network errors: show toast with retry option
+- AI failures: gracefully fall back to manual selection
+- Use React Error Boundaries around AI components
+
+---
+
+## SHARED CONVENTIONS
+
+### Naming
+- Files: `kebab-case` for React files, `snake_case` for Ruby files
+- Variables/functions: `camelCase` in JS, `snake_case` in Ruby
+- Constants: `SCREAMING_SNAKE_CASE` in both
+- Database columns: `snake_case` always
+- API JSON keys: `camelCase` (Rails serializer should convert)
+
+### Git Commits
+Follow conventional commits:
+```
+feat: add voice check-off flow
+fix: correct confidence threshold for photo match
+chore: add RSpec tests for VoiceMatchService
+refactor: extract AI prompts into constants
+```
+
+### Environment Variables
+Backend (`.env`):
+```
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_BUCKET=
+DATABASE_URL=
+```
+
+Frontend (`.env`):
+```
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+Never commit API keys. Never hardcode secrets. Always use env vars.
+
+---
+
+## AI PROMPT STANDARDS
+
+### Voice Match Prompt Template
+```
+You are a job site assistant helping a contractor check off tasks.
+The contractor just said: "{transcription}"
+Here are the incomplete checklist items:
+{items_as_numbered_list}
+
+Return ONLY valid JSON, no other text:
+{
+  "matched_item_id": "<id or null>",
+  "confidence": <0.0-1.0>,
+  "reasoning": "<one sentence>"
+}
+
+Match loosely — contractors speak casually. Partial matches count.
+```
+
+### Photo Match Prompt Template
+```
+You are a job site assistant. Look at this photo from a job site.
+Determine which of these checklist items it most likely documents:
+{items_as_numbered_list}
+
+Return ONLY valid JSON, no other text:
+{
+  "matched_item_id": "<id or null>",
+  "confidence": <0.0-1.0>,
+  "description": "<one sentence: what you see>",
+  "reasoning": "<why this matches>"
+}
+```
+
+### Q&A Prompt Template
+```
+You are a helpful job site assistant for a contractor.
+Project: {project_name} | Trade: {trade_type}
+Checklist: {checklist_name}
+Items: {items_with_status_timestamps}
+
+Question: "{user_question}"
+
+Answer in 1-2 sentences. Be direct and practical. No filler words.
+For "what's next?" return ONLY the item name.
+```
+
+---
+
+## CONFIDENCE THRESHOLD CONSTANTS
+
+```javascript
+// src/constants/ai.js
+export const AI_CONFIDENCE = {
+  AUTO_SUGGEST: 0.90,    // Auto-suggest, 2s countdown
+  SUGGEST: 0.70,         // Show suggestion, require tap
+  GUESS: 0.50,           // Show as guess, ask "is this right?"
+  NO_MATCH: 0.49         // No suggestion, show full list
+}
+```
+
+```ruby
+# app/constants/ai_constants.rb
+module AiConstants
+  AUTO_SUGGEST_THRESHOLD = 0.90
+  SUGGEST_THRESHOLD      = 0.70
+  GUESS_THRESHOLD        = 0.50
+end
+```
+
+---
+
+## WHAT NOT TO DO
+
+- ❌ Don't call Claude or Whisper APIs from the React frontend — always go through Rails
+- ❌ Don't use modals on mobile — use bottom sheets
+- ❌ Don't use text smaller than 16px (text-base) for readable content
+- ❌ Don't put logic in Rails controllers — use service objects
+- ❌ Don't store server data in Zustand — use React Query
+- ❌ Don't auto-complete a checklist item without user confirmation
+- ❌ Don't show raw confidence scores (like "87.3%") to users — use visual cues instead
+- ❌ Don't build any feature that requires two hands to operate
+- ❌ Don't skip the offline queue — contractors lose signal constantly
+- ❌ Don't hardcode checklist items — everything comes from templates or user input

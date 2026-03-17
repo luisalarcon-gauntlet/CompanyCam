@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Repos/CompanyCam -type f \\\\\\( -iname \"*auth*\" -o -iname \"*login*\" -o -iname \"*session*\" -o -iname \"*sign*in*\" \\\\\\) 2>/dev/null | head -30)",
+      "Bash(docker-compose exec api rails db:seed 2>&1)",
+      "Bash(docker-compose build api 2>&1)",
+      "Bash(docker-compose up -d && sleep 5 && docker-compose exec api rails db:seed 2>&1)",
+      "Bash(grep -r \"s3\\\\|S3\\\\|aws-sdk\\\\|AWS_ACCESS\" /c/Repos/CompanyCam/api/app --include=\"*.rb\" 2>/dev/null | head -20)",
+      "Bash(docker-compose up --build -d 2>&1)",
+      "Bash(docker-compose up -d 2>&1)",
+      "Bash(sleep 4 && docker-compose logs web --tail=20 2>&1)",
+      "Bash(docker-compose logs api --tail=50 2>&1)",
+      "Bash(docker-compose exec api printenv ANTHROPIC_API_KEY | wc -c 2>&1)",
+      "Bash(docker-compose restart api 2>&1)",
+      "Bash(sleep 5 && docker-compose logs api --tail=10 2>&1)",
+      "Bash(docker-compose logs api --tail=30 2>&1)",
+      "Bash(docker-compose exec api sh -c 'echo $ANTHROPIC_API_KEY' | head -c 20 2>&1)",
+      "Bash(docker-compose exec api bundle exec ruby -e \"require 'anthropic'; c = Anthropic::Client.new; puts c.class\" 2>&1)",
+      "Bash(docker-compose exec api cat /usr/local/bundle/gems/anthropic-0.4.1/lib/anthropic.rb | grep -A 10 \"access_token\" 2>&1)",
+      "Bash(docker-compose exec api sh -c 'cat $\\(bundle show anthropic\\)/lib/anthropic.rb' 2>&1 | grep -A 10 \"access_token\")",
+      "Bash(docker-compose restart api 2>&1 && sleep 6 && docker-compose exec api bundle exec ruby -e \"require 'rails'; require_relative '/rails/config/environment'; c = Anthropic::Client.new; puts 'Client OK: ' + c.class.to_s\" 2>&1)",
+      "Bash(docker-compose restart api)"
+    ]
+  }
+}

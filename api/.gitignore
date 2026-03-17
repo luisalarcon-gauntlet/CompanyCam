@@ -1,0 +1,36 @@
+# Rails
+*.log
+/log/*
+!/log/.keep
+/tmp/*
+!/tmp/.keep
+/storage/*
+!/storage/.keep
+/public/system
+/public/packs
+/public/assets
+
+# Secrets
+.env
+.env.local
+!.env.example
+config/master.key
+
+# Bundler
+/.bundle
+/vendor/bundle
+
+# Coverage and dev
+/coverage
+/node_modules
+
+# PID and sockets
+/tmp/pids/*
+!/tmp/pids/
+!/tmp/pids/.keep
+*.pid
+*.sock
+
+# Local sqlite (if ever used)
+/db/*.sqlite3
+/db/*.sqlite3-*

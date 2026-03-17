@@ -1,0 +1,23 @@
+# Environment and secrets (never commit)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# Logs (repo-wide)
+*.log
+logs/
+
+# Cursor / Claude
+.cursor
+.claude
