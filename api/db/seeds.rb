@@ -109,8 +109,7 @@ templates_data = [
 
 puts "Creating checklist templates..."
 templates_data.each do |data|
-  ChecklistTemplate.find_or_create_by!(name: data[:name]) do |t|
-    t.trade_type = data[:trade_type]
+  ChecklistTemplate.find_or_create_by!(name: data[:name], trade_type: data[:trade_type]) do |t|
     t.is_default = data[:is_default]
     t.items = data[:items]
   end
@@ -120,34 +119,28 @@ puts "  Created #{ChecklistTemplate.count} templates"
 # Demo Users
 puts "Creating demo users..."
 
-demo_user = User.find_or_initialize_by(email: "demo@fieldcheck.app")
-demo_user.assign_attributes(
-  name: "Demo Contractor",
-  password: "password123",
-  password_confirmation: "password123",
-  role: "owner"
-)
-demo_user.save!
+demo_user = User.find_or_create_by!(email: "demo@fieldcheck.app") do |record|
+  record.name = "Demo Contractor"
+  record.password = "password123"
+  record.password_confirmation = "password123"
+  record.role = "owner"
+end
 puts "  Owner:     demo@fieldcheck.app / password123"
 
-crew_user = User.find_or_initialize_by(email: "crew@fieldcheck.app")
-crew_user.assign_attributes(
-  name: "Alex Rivera",
-  password: "password123",
-  password_confirmation: "password123",
-  role: "crew_lead"
-)
-crew_user.save!
+crew_user = User.find_or_create_by!(email: "crew@fieldcheck.app") do |record|
+  record.name = "Alex Rivera"
+  record.password = "password123"
+  record.password_confirmation = "password123"
+  record.role = "crew_lead"
+end
 puts "  Crew Lead: crew@fieldcheck.app / password123"
 
-tech_user = User.find_or_initialize_by(email: "tech@fieldcheck.app")
-tech_user.assign_attributes(
-  name: "Jordan Kim",
-  password: "password123",
-  password_confirmation: "password123",
-  role: "tech"
-)
-tech_user.save!
+tech_user = User.find_or_create_by!(email: "tech@fieldcheck.app") do |record|
+  record.name = "Jordan Kim"
+  record.password = "password123"
+  record.password_confirmation = "password123"
+  record.role = "tech"
+end
 puts "  Tech:      tech@fieldcheck.app / password123"
 
 # Clear existing demo projects for clean re-seed
@@ -158,14 +151,16 @@ demo_user.projects.destroy_all
 # Story: Almost done, one item left — creates urgency
 # ──────────────────────────────────────────────
 puts "Creating Roofing project (nearly complete)..."
-roofing_project = demo_user.projects.create!(
-  name: "Harmon Residence — Roof Replacement",
-  address: "1842 Oak Street, Austin, TX 78701",
-  trade_type: "roofing",
-  notes: "Full tear-off and replacement. Homeowner requested architectural shingles. GAF Timberline HDZ in Charcoal."
-)
+roofing_project = Project.find_or_create_by!(name: "Harmon Residence — Roof Replacement") do |record|
+  record.user = demo_user
+  record.address = "1842 Oak Street, Austin, TX 78701"
+  record.trade_type = "roofing"
+  record.notes = "Full tear-off and replacement. Homeowner requested architectural shingles. GAF Timberline HDZ in Charcoal."
+end
 
-roofing_cl1 = roofing_project.checklists.create!(name: "Tear Off & Prep", position: 1)
+roofing_cl1 = Checklist.find_or_create_by!(name: "Tear Off & Prep", project_id: roofing_project.id) do |record|
+  record.position = 1
+end
 
 [
   { title: "Remove old shingles",            status: "complete", completed_at: 2.days.ago, completed_via: "manual" },
@@ -181,17 +176,22 @@ roofing_cl1 = roofing_project.checklists.create!(name: "Tear Off & Prep", positi
     photo_thumbnail_url: "https://images.unsplash.com/photo-1632759145351-1d592919f522?w=200",
     ai_confidence: 0.87 },
 ].each_with_index do |attrs, i|
-  roofing_cl1.checklist_items.create!(
-    title: attrs[:title], status: attrs[:status], position: i + 1,
-    completed_at: attrs[:completed_at], completed_via: attrs[:completed_via],
-    completed_by: attrs[:status] == "complete" ? demo_user : nil,
-    voice_transcription: attrs[:voice_transcription],
-    photo_url: attrs[:photo_url], photo_thumbnail_url: attrs[:photo_thumbnail_url],
-    ai_confidence: attrs[:ai_confidence]
-  )
+  ChecklistItem.find_or_create_by!(title: attrs[:title], checklist_id: roofing_cl1.id) do |record|
+    record.status = attrs[:status]
+    record.position = i + 1
+    record.completed_at = attrs[:completed_at]
+    record.completed_via = attrs[:completed_via]
+    record.completed_by = attrs[:status] == "complete" ? demo_user : nil
+    record.voice_transcription = attrs[:voice_transcription]
+    record.photo_url = attrs[:photo_url]
+    record.photo_thumbnail_url = attrs[:photo_thumbnail_url]
+    record.ai_confidence = attrs[:ai_confidence]
+  end
 end
 
-roofing_cl2 = roofing_project.checklists.create!(name: "Install & Finish", position: 2)
+roofing_cl2 = Checklist.find_or_create_by!(name: "Install & Finish", project_id: roofing_project.id) do |record|
+  record.position = 2
+end
 
 [
   { title: "Install shingles",               status: "complete", completed_at: 4.hours.ago, completed_via: "photo",
@@ -204,14 +204,17 @@ roofing_cl2 = roofing_project.checklists.create!(name: "Install & Finish", posit
     ai_confidence: 0.92 },
   { title: "Final inspection photo",         status: "incomplete" },
 ].each_with_index do |attrs, i|
-  roofing_cl2.checklist_items.create!(
-    title: attrs[:title], status: attrs[:status], position: i + 1,
-    completed_at: attrs[:completed_at], completed_via: attrs[:completed_via],
-    completed_by: attrs[:status] == "complete" ? demo_user : nil,
-    voice_transcription: attrs[:voice_transcription],
-    photo_url: attrs[:photo_url], photo_thumbnail_url: attrs[:photo_thumbnail_url],
-    ai_confidence: attrs[:ai_confidence]
-  )
+  ChecklistItem.find_or_create_by!(title: attrs[:title], checklist_id: roofing_cl2.id) do |record|
+    record.status = attrs[:status]
+    record.position = i + 1
+    record.completed_at = attrs[:completed_at]
+    record.completed_via = attrs[:completed_via]
+    record.completed_by = attrs[:status] == "complete" ? demo_user : nil
+    record.voice_transcription = attrs[:voice_transcription]
+    record.photo_url = attrs[:photo_url]
+    record.photo_thumbnail_url = attrs[:photo_thumbnail_url]
+    record.ai_confidence = attrs[:ai_confidence]
+  end
 end
 
 # ──────────────────────────────────────────────
@@ -219,14 +222,16 @@ end
 # Story: In progress, mix of completion methods
 # ──────────────────────────────────────────────
 puts "Creating HVAC project (mid-job)..."
-hvac_project = demo_user.projects.create!(
-  name: "Mueller HVAC Install",
-  address: "4200 Commerce Dr, Suite 310, Austin, TX 78744",
-  trade_type: "hvac",
-  notes: "New Carrier Infinity 24 system. Replacing a 12-year-old Trane unit. Customer wants smart thermostat integration."
-)
+hvac_project = Project.find_or_create_by!(name: "Mueller HVAC Install") do |record|
+  record.user = demo_user
+  record.address = "4200 Commerce Dr, Suite 310, Austin, TX 78744"
+  record.trade_type = "hvac"
+  record.notes = "New Carrier Infinity 24 system. Replacing a 12-year-old Trane unit. Customer wants smart thermostat integration."
+end
 
-hvac_cl1 = hvac_project.checklists.create!(name: "System Inspection", position: 1)
+hvac_cl1 = Checklist.find_or_create_by!(name: "System Inspection", project_id: hvac_project.id) do |record|
+  record.position = 1
+end
 
 [
   { title: "Check thermostat settings",       status: "complete", completed_at: 5.hours.ago, completed_via: "manual" },
@@ -238,16 +243,20 @@ hvac_cl1 = hvac_project.checklists.create!(name: "System Inspection", position: 
   { title: "Check refrigerant levels",       status: "incomplete" },
   { title: "Inspect ductwork for leaks",     status: "incomplete" },
 ].each_with_index do |attrs, i|
-  hvac_cl1.checklist_items.create!(
-    title: attrs[:title], status: attrs[:status], position: i + 1,
-    completed_at: attrs[:completed_at], completed_via: attrs[:completed_via],
-    completed_by: attrs[:status] == "complete" ? demo_user : nil,
-    voice_transcription: attrs[:voice_transcription],
-    ai_confidence: attrs[:ai_confidence]
-  )
+  ChecklistItem.find_or_create_by!(title: attrs[:title], checklist_id: hvac_cl1.id) do |record|
+    record.status = attrs[:status]
+    record.position = i + 1
+    record.completed_at = attrs[:completed_at]
+    record.completed_via = attrs[:completed_via]
+    record.completed_by = attrs[:status] == "complete" ? demo_user : nil
+    record.voice_transcription = attrs[:voice_transcription]
+    record.ai_confidence = attrs[:ai_confidence]
+  end
 end
 
-hvac_cl2 = hvac_project.checklists.create!(name: "Documentation", position: 2)
+hvac_cl2 = Checklist.find_or_create_by!(name: "Documentation", project_id: hvac_project.id) do |record|
+  record.position = 2
+end
 
 [
   { title: "Take before photo",              status: "complete", completed_at: 6.hours.ago, completed_via: "photo",
@@ -256,13 +265,16 @@ hvac_cl2 = hvac_project.checklists.create!(name: "Documentation", position: 2)
     ai_confidence: 0.82 },
   { title: "Take after photo",              status: "incomplete" },
 ].each_with_index do |attrs, i|
-  hvac_cl2.checklist_items.create!(
-    title: attrs[:title], status: attrs[:status], position: i + 1,
-    completed_at: attrs[:completed_at], completed_via: attrs[:completed_via],
-    completed_by: attrs[:status] == "complete" ? demo_user : nil,
-    photo_url: attrs[:photo_url], photo_thumbnail_url: attrs[:photo_thumbnail_url],
-    ai_confidence: attrs[:ai_confidence]
-  )
+  ChecklistItem.find_or_create_by!(title: attrs[:title], checklist_id: hvac_cl2.id) do |record|
+    record.status = attrs[:status]
+    record.position = i + 1
+    record.completed_at = attrs[:completed_at]
+    record.completed_via = attrs[:completed_via]
+    record.completed_by = attrs[:status] == "complete" ? demo_user : nil
+    record.photo_url = attrs[:photo_url]
+    record.photo_thumbnail_url = attrs[:photo_thumbnail_url]
+    record.ai_confidence = attrs[:ai_confidence]
+  end
 end
 
 # ──────────────────────────────────────────────
@@ -270,14 +282,16 @@ end
 # Story: Fresh job, barely begun — shows the starting point
 # ──────────────────────────────────────────────
 puts "Creating Plumbing project (just started)..."
-plumbing_project = demo_user.projects.create!(
-  name: "Westside Plumbing Inspection",
-  address: "756 Maple Ave, Austin, TX 78703",
-  trade_type: "plumbing",
-  notes: "Full property inspection before closing. Check all fixtures, water heater, main line."
-)
+plumbing_project = Project.find_or_create_by!(name: "Westside Plumbing Inspection") do |record|
+  record.user = demo_user
+  record.address = "756 Maple Ave, Austin, TX 78703"
+  record.trade_type = "plumbing"
+  record.notes = "Full property inspection before closing. Check all fixtures, water heater, main line."
+end
 
-plumbing_cl1 = plumbing_project.checklists.create!(name: "Property Inspection", position: 1)
+plumbing_cl1 = Checklist.find_or_create_by!(name: "Property Inspection", project_id: plumbing_project.id) do |record|
+  record.position = 1
+end
 
 [
   { title: "Shut off water main",            status: "complete", completed_at: 1.hour.ago, completed_via: "manual" },
@@ -288,11 +302,13 @@ plumbing_cl1 = plumbing_project.checklists.create!(name: "Property Inspection", 
   { title: "Test drain flow",               status: "incomplete" },
   { title: "Take completion photo",         status: "incomplete" },
 ].each_with_index do |attrs, i|
-  plumbing_cl1.checklist_items.create!(
-    title: attrs[:title], status: attrs[:status], position: i + 1,
-    completed_at: attrs[:completed_at], completed_via: attrs[:completed_via],
-    completed_by: attrs[:status] == "complete" ? demo_user : nil,
-  )
+  ChecklistItem.find_or_create_by!(title: attrs[:title], checklist_id: plumbing_cl1.id) do |record|
+    record.status = attrs[:status]
+    record.position = i + 1
+    record.completed_at = attrs[:completed_at]
+    record.completed_via = attrs[:completed_via]
+    record.completed_by = attrs[:status] == "complete" ? demo_user : nil
+  end
 end
 
 puts "\nSeed complete!"
