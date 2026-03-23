@@ -100,7 +100,11 @@ export default function LoginPage() {
                 key={email}
                 type="button"
                 className="flex items-center justify-between text-sm px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-primary hover:bg-primary/5 transition-colors"
-                onClick={() => setForm({ email, password: 'password123' })}
+                onClick={() => {
+                  setForm({ email, password: 'password123' })
+                  setError('')
+                  mutation.mutate({ email, password: 'password123' })
+                }}
               >
                 <span className="font-semibold text-navy">{label}</span>
                 <span className="text-muted">{email}</span>

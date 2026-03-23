@@ -15,6 +15,10 @@ RUN bundle install
 # Copy the rest of the app
 COPY . .
 
+# Make entrypoint executable
+RUN chmod +x bin/docker-entrypoint
+
 EXPOSE 3000
 
+ENTRYPOINT ["bin/docker-entrypoint"]
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

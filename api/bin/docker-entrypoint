@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+rm -f tmp/pids/server.pid
+
+echo "Preparing database..."
+bundle exec rails db:prepare
+
+echo "Seeding database..."
+bundle exec rails db:seed
+
+echo "Starting Rails server..."
+exec "$@"
